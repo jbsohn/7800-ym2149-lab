@@ -3,8 +3,11 @@
 ; -------------------------
 ; YM2149 write-only ports
 ; -------------------------
-AY_ADDR = $0460
-AY_DATA = $0461
+ay_addr = $0460
+ay_data = $0461
+backgrnd = $0020
+heartbeat = $80
+speed_mult = 4
 
 ; -------------------------
 ; Notes (YM2149 tone period = f_clk / (16 * f_out))
@@ -13,92 +16,120 @@ AY_DATA = $0461
 ; E4 ~ 329.6 Hz -> period ≈ 339
 ; G4 ~ 392.0 Hz -> period ≈ 285
 ; -------------------------
-NOTE_C_LO = <427
-NOTE_C_HI = >427
-NOTE_E_LO = <339
-NOTE_E_HI = >339
-NOTE_G_LO = <285
-NOTE_G_HI = >285
+note_c_lo = <427
+note_c_hi = >427
+note_e_lo = <339
+note_e_hi = >339
+note_g_lo = <285
+note_g_hi = >285
 
-        ORG $8000
+        org $8000
 
         ; -------------------------
         ; A78 HEADER (v4)
         ; -------------------------
         include "a78_ym2149_header.asm"
 
-RESET:
-        SEI
-        CLD
-        LDX #$FF
-        TXS
+reset:
+        sei
+        cld
+        ldx #$ff
+        txs
+
+        lda #$00
+        sta heartbeat
+        ora #$06
+        sta backgrnd
 
         ; -------------------------
         ; YM2149 init
         ; -------------------------
         ; Disable noise, enable tone A only
-        LDA #$07
-        STA AY_ADDR
-        LDA #%00111110
-        STA AY_DATA
+        lda #$07
+        sta ay_addr
+        lda #%00111110
+        sta ay_data
 
         ; Set volume A to max (fixed volume)
-        LDA #$08
-        STA AY_ADDR
-        LDA #$0F
-        STA AY_DATA
+        lda #$08
+        sta ay_addr
+        lda #$0f
+        sta ay_data
 
-MAIN_LOOP:
+main_loop:
         ; C4
-        LDA #$00
-        STA AY_ADDR
-        LDA #NOTE_C_LO
-        STA AY_DATA
-        LDA #$01
-        STA AY_ADDR
-        LDA #NOTE_C_HI
-        STA AY_DATA
-        JSR DELAY
+        jsr tick_vis
+        lda #$00
+        sta ay_addr
+        lda #note_c_lo
+        sta ay_data
+        lda #$01
+        sta ay_addr
+        lda #note_c_hi
+        sta ay_data
+        jsr delay_tempo
 
         ; E4
-        LDA #$00
-        STA AY_ADDR
-        LDA #NOTE_E_LO
-        STA AY_DATA
-        LDA #$01
-        STA AY_ADDR
-        LDA #NOTE_E_HI
-        STA AY_DATA
-        JSR DELAY
+        jsr tick_vis
+        lda #$00
+        sta ay_addr
+        lda #note_e_lo
+        sta ay_data
+        lda #$01
+        sta ay_addr
+        lda #note_e_hi
+        sta ay_data
+        jsr delay_tempo
 
         ; G4
-        LDA #$00
-        STA AY_ADDR
-        LDA #NOTE_G_LO
-        STA AY_DATA
-        LDA #$01
-        STA AY_ADDR
-        LDA #NOTE_G_HI
-        STA AY_DATA
-        JSR DELAY
+        jsr tick_vis
+        lda #$00
+        sta ay_addr
+        lda #note_g_lo
+        sta ay_data
+        lda #$01
+        sta ay_addr
+        lda #note_g_hi
+        sta ay_data
+        jsr delay_tempo
 
-        JMP MAIN_LOOP
+        jmp main_loop
+
+; -------------------------
+; Visual heartbeat
+; -------------------------
+tick_vis:
+        lda heartbeat
+        clc
+        adc #$22
+        sta heartbeat
+        ora #$06
+        sta backgrnd
+        rts
 
 ; -------------------------
 ; Delay loop
 ; -------------------------
-DELAY:
-        LDY #$60
-DELAY_Y:
-        LDX #$FF
-DELAY_X:
-        DEX
-        BNE DELAY_X
-        DEY
-        BNE DELAY_Y
-        RTS
+delay:
+        ldy #$60
+delay_y:
+        ldx #$ff
+delay_x:
+        dex
+        bne delay_x
+        dey
+        bne delay_y
+        rts
 
-        ORG $FFFA
-        .word RESET
-        .word RESET
-        .word RESET
+delay_tempo:
+        ldx #speed_mult
+delay_tempo_loop:
+        jsr delay
+        dex
+        bne delay_tempo_loop
+        rts
+
+        org $fffa
+        .word reset
+        .word reset
+        .word reset

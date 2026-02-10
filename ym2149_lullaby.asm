@@ -3,96 +3,105 @@
 ; Simple YM2149 "lullaby" (3‑note motif) for Atari 7800
 ; Uses write‑only $0460/$0461, header v4 from a78_ym2149_header.asm
 
-AY_ADDR = $0460
-AY_DATA = $0461
+ay_addr = $0460
+ay_data = $0461
+speed_mult = 4
 
 ; Periods for NTSC 1.789772 MHz clock
 ; A4 440 Hz -> ~254
 ; G4 392 Hz -> ~285
 ; E4 330 Hz -> ~339
-NOTE_A_LO = <254
-NOTE_A_HI = >254
-NOTE_G_LO = <285
-NOTE_G_HI = >285
-NOTE_E_LO = <339
-NOTE_E_HI = >339
+note_a_lo = <254
+note_a_hi = >254
+note_g_lo = <285
+note_g_hi = >285
+note_e_lo = <339
+note_e_hi = >339
 
-        ORG $8000
+        org $8000
         include "a78_ym2149_header.asm"
 
-RESET:
-        SEI
-        CLD
-        LDX #$FF
-        TXS
+reset:
+        sei
+        cld
+        ldx #$ff
+        txs
 
         ; Enable tone A only, no noise
-        LDA #$07
-        STA AY_ADDR
-        LDA #%00111110
-        STA AY_DATA
+        lda #$07
+        sta ay_addr
+        lda #%00111110
+        sta ay_data
 
         ; Volume A = max
-        LDA #$08
-        STA AY_ADDR
-        LDA #$0F
-        STA AY_DATA
+        lda #$08
+        sta ay_addr
+        lda #$0f
+        sta ay_data
 
-MAIN:
-        JSR NOTE_A
-        JSR NOTE_G
-        JSR NOTE_E
-        JSR NOTE_G
-        JMP MAIN
+main:
+        jsr note_a
+        jsr note_g
+        jsr note_e
+        jsr note_g
+        jmp main
 
-NOTE_A:
-        LDA #$00
-        STA AY_ADDR
-        LDA #NOTE_A_LO
-        STA AY_DATA
-        LDA #$01
-        STA AY_ADDR
-        LDA #NOTE_A_HI
-        STA AY_DATA
-        JSR DELAY
-        RTS
+note_a:
+        lda #$00
+        sta ay_addr
+        lda #note_a_lo
+        sta ay_data
+        lda #$01
+        sta ay_addr
+        lda #note_a_hi
+        sta ay_data
+        jsr delay_tempo
+        rts
 
-NOTE_G:
-        LDA #$00
-        STA AY_ADDR
-        LDA #NOTE_G_LO
-        STA AY_DATA
-        LDA #$01
-        STA AY_ADDR
-        LDA #NOTE_G_HI
-        STA AY_DATA
-        JSR DELAY
-        RTS
+note_g:
+        lda #$00
+        sta ay_addr
+        lda #note_g_lo
+        sta ay_data
+        lda #$01
+        sta ay_addr
+        lda #note_g_hi
+        sta ay_data
+        jsr delay_tempo
+        rts
 
-NOTE_E:
-        LDA #$00
-        STA AY_ADDR
-        LDA #NOTE_E_LO
-        STA AY_DATA
-        LDA #$01
-        STA AY_ADDR
-        LDA #NOTE_E_HI
-        STA AY_DATA
-        JSR DELAY
-        RTS
+note_e:
+        lda #$00
+        sta ay_addr
+        lda #note_e_lo
+        sta ay_data
+        lda #$01
+        sta ay_addr
+        lda #note_e_hi
+        sta ay_data
+        jsr delay_tempo
+        rts
 
-DELAY:
-        LDY #$E0
-DELAY_Y:
-        LDX #$FF
-DELAY_X:
-        DEX
-        BNE DELAY_X
-        DEY
-        BNE DELAY_Y
-        RTS
+delay:
+        ldy #$e0
+delay_y:
+        ldx #$ff
+delay_x:
+        dex
+        bne delay_x
+        dey
+        bne delay_y
+        rts
 
-        ORG $FFFA
-        .word RESET
-        .word RESET
-        .word RESET
+delay_tempo:
+        ldx #speed_mult
+delay_tempo_loop:
+        jsr delay
+        dex
+        bne delay_tempo_loop
+        rts
+
+        org $fffa
+        .word reset
+        .word reset
+        .word reset
