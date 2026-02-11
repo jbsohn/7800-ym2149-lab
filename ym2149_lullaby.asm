@@ -5,6 +5,7 @@
 
 ay_addr = $0460
 ay_data = $0461
+tempo_count = $80
 speed_mult = 4
 
 ; Periods for NTSC 1.789772 MHz clock
@@ -19,7 +20,14 @@ note_e_lo = <339
 note_e_hi = >339
 
         org $8000
+
+        ifconst build_with_header
+        if build_with_header
         include "a78_ym2149_header.asm"
+        endif
+        else
+        include "a78_ym2149_header.asm"
+        endif
 
 reset:
         sei
@@ -94,10 +102,11 @@ delay_x:
         rts
 
 delay_tempo:
-        ldx #speed_mult
+        lda #speed_mult
+        sta tempo_count
 delay_tempo_loop:
         jsr delay
-        dex
+        dec tempo_count
         bne delay_tempo_loop
         rts
 

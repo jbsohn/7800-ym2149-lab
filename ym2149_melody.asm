@@ -7,6 +7,7 @@ ay_addr = $0460
 ay_data = $0461
 backgrnd = $0020
 heartbeat = $80
+tempo_count = $81
 speed_mult = 4
 
 ; -------------------------
@@ -28,7 +29,13 @@ note_g_hi = >285
         ; -------------------------
         ; A78 HEADER (v4)
         ; -------------------------
+        ifconst build_with_header
+        if build_with_header
         include "a78_ym2149_header.asm"
+        endif
+        else
+        include "a78_ym2149_header.asm"
+        endif
 
 reset:
         sei
@@ -122,13 +129,17 @@ delay_x:
         rts
 
 delay_tempo:
-        ldx #speed_mult
+        lda #speed_mult
+        sta tempo_count
 delay_tempo_loop:
         jsr delay
-        dex
+        dec tempo_count
         bne delay_tempo_loop
         rts
 
+        org $fff8
+        .byte $ff         ; required by 7800sign
+        .byte $83         ; ROM start $8000
         org $fffa
         .word reset
         .word reset

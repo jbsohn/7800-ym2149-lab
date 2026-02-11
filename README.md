@@ -4,8 +4,51 @@ This repository is a playground for experiments with the Atari 7800 using YM2149
 
 ## Build
 
-Assemble the melody source with DASM for A7800 emulator:
+By default, sources build with the 128-byte A78 header (good for emulators):
 
 ```bash
 dasm ym2149_melody.asm -f3 -oym2149_melody.a78
+dasm ym2149_lullaby.asm -f3 -oym2149_lullaby.a78
 ```
+
+To build raw ROM images (no A78 header, good for EPROM burning), set
+`build_with_header=0`:
+
+```bash
+dasm ym2149_melody.asm -Dbuild_with_header=0 -f3 -oym2149_melody.bin
+dasm ym2149_lullaby.asm -Dbuild_with_header=0 -f3 -oym2149_lullaby.bin
+```
+
+## Signing for Real 7800 Hardware
+
+Atari 7800 cartridges must be cryptographically signed. After building a raw
+`.bin`, run `7800sign -w` to write the signature into the ROM image:
+
+```bash
+/home/john/7800AsmDevKit/7800sign -w ym2149_melody.bin
+/home/john/7800AsmDevKit/7800sign -t ym2149_melody.bin
+```
+
+Important ROM footer requirement for `7800sign`:
+
+- `$FFF8` must be `$FF`
+- `$FFF9` low nibble must be `3` or `7` (for a 32KB image at `$8000`, use `$83`)
+
+In assembly source:
+
+```asm
+org $fff8
+.byte $ff
+.byte $83
+org $fffa
+.word reset
+.word reset
+.word reset
+```
+
+## Output Formats
+
+- `.a78`: 128-byte A78 header + 32 KB ROM (`32896` bytes total). Use for emulators.
+- `.bin`: raw 32 KB ROM only (`32768` bytes). Use for EPROM programming / real cartridge testing.
+
+For real hardware, burn `ym2149_melody.bin` (or `ym2149_lullaby.bin`).
