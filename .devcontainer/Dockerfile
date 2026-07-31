@@ -6,7 +6,7 @@ USER root
 # Avoid prompts from apt
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install core tools, Node.js, Java, Cargo/Rust, DASM, and build dependencies
+# Install core tools, Node.js, Java, Cargo/Rust, cc65 (Git master), and build dependencies
 RUN apt-get update -y && \
     apt-get install -y --no-install-recommends \
         curl \
@@ -15,11 +15,10 @@ RUN apt-get update -y && \
         git \
         librsvg2-bin \
         build-essential \
-        dasm \
         ca-certificates \
         gnupg \
         unzip && \
-    # Install Node.js 20.x
+    # Install Node.js 20.x \
     curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
     apt-get install -y nodejs && \
     npm install -g bun && \
@@ -31,16 +30,18 @@ RUN apt-get update -y && \
     ln -sf /usr/local/lib/jvm/amazon-corretto-25*/bin/java /usr/local/bin/java && \
     # Install Freerouting
     wget -q "https://github.com/freerouting/freerouting/releases/download/v2.2.4/freerouting-2.2.4.jar" -O /usr/local/lib/freerouting.jar && \
-    # Install Cargo and Galette (for PLD compilation)
+    # Install Cargo and Galette (for PLD compilation) \
     apt-get install -y --no-install-recommends cargo && \
     cargo install galette --version 0.3.0 --root /usr/local --locked && \
+    # Build latest cc65 toolchain (ca65, ld65) from GitHub master branch
+    git clone https://github.com/cc65/cc65.git /tmp/cc65 && \
+    make -C /tmp/cc65 -j$(nproc) && \
+    make -C /tmp/cc65 install PREFIX=/usr/local && \
+    rm -rf /tmp/cc65 && \
     # Compile 7800sign utility
     curl -fsSL https://raw.githubusercontent.com/7800-devtools/7800basic/master/7800sign.c -o /tmp/7800sign.c && \
     gcc -O2 /tmp/7800sign.c -o /usr/local/bin/7800sign && \
     rm /tmp/7800sign.c && \
-    # Install .NET 10.0 SDK
-    curl -sSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin --channel 10.0 --install-dir /usr/share/dotnet && \
-    ln -s /usr/share/dotnet/dotnet /usr/local/bin/dotnet && \
     # Clean up apt
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*

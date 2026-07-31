@@ -1,28 +1,30 @@
 # Atari 7800 YM2149 Project File Reference
 
-This document describes the various file extensions and build artifacts used in the YM2149 toolchain.
+This document describes the file extensions and build artifacts used within the **lokey-7800-ym2149** hardware, PLD logic, and 6502 driver repository.
 
-## Asset & Source Files
+> **Note:** Audio compilation formats (`.ysg`, `.yfx`, `.ysi`, `.ym`) are documented in [`lokey-ym2149-tools/docs/FileFormats.md`](file:///Users/john/Projects/lokey-ym2149-tools/docs/FileFormats.md). Emulator header packaging formats (`.a78`) are documented in [`lokey-7800-tools/docs/A78HeaderSpec.md`](file:///Users/john/Projects/lokey-7800-tools/docs/A78HeaderSpec.md).
 
-| Extension | Name | Description |
-| :--- | :--- | :--- |
-| `.ym` / `.YM` | YM Sample | Original Atari ST / Amstrad CPC music files (YM2149 register dumps). |
-| `.vgm` / `.vgz` | VGM Sample | Video Game Music files containing AY-3-8910 command streams. |
-| `.asm` | 6502 Assembly | Source code for the music player, logic ROMs, and hardware drivers. |
-| `.pld` | CUPL Logic | Source code for the PLD address decoder, compiled with `galette` (see `pld/`; ATF16V8B on the [28-pin board](Hardware-28pin.md), ATF22V10 on the [32-pin board](Hardware-32pin.md)). |
+---
 
-## Intermediate Build Artifacts
+## 1. Hardware & Assembly Source Files
 
-| Extension | Name | Description |
-| :--- | :--- | :--- |
-| **`.ymb`** | **YM Binary** | Custom compressed music data. Uses delta-masking and pattern deduplication. Replaced generic `.bin`. |
-| **`.ymi`** | **YM Info** | Sidecar metadata file for DASM. Contains timing constants (`PLAYER_HZ`, `YM_DELAY`) and data offsets. Replaced `.yminc`. |
-| `.wav` | Verification Audio | 44.1kHz PCM audio rendered from the `.ymb` data to verify conversion accuracy. |
+| Extension | Name | Category | Description |
+| :--- | :--- | :--- | :--- |
+| **`.s`** | ca65 Assembly Source | 6502 Drivers | 6502 assembly source files for bank selection demos and drivers (e.g., `examples/bank.s`). |
+| **`.inc`** | ca65 Include Header | 6502 Equates | Register equate definitions for Atari 7800 MARIA, TIA, and YM2149 (e.g., `include/maria.inc`, `ym2149.inc`). |
+| **`.cfg`** | ld65 Linker Script | Linker Config | Memory layout definitions for fixed 32KB (`examples/a7800.cfg`) and 256KB banked ROMs (`examples/a7800_banked.cfg`). |
+| **`.pld`** | CUPL Logic Source | PLD Logic | GAL/PLD logic equations for address decoding and YM bank switching (e.g., `pld/rom_ym_32pin.pld`). |
+| **`.circuit.tsx`** | tscircuit Component | PCB Design | Code-driven React PCB layout definitions in `pcb/` (e.g., `28pin.circuit.tsx`, `32pin.circuit.tsx`). |
+| **`.json`** | A78 Header Config | Tooling Config | Header configuration file consumed by `a78tool` (e.g., `header.json`, `examples/bank.json`). |
 
-## Target ROMs & Hardware Files
+---
 
-| Extension | Name | Description |
-| :--- | :--- | :--- |
-| **`.rom`** | **Hardware ROM** | Raw 32KB binary image. These are **signed** via `7800sign` and are ready to be flashed to physical EPROMs. |
-| **`.a78`** | **Emulator ROM** | Includes a standard 128-byte Atari 7800 header. Used for testing in emulators like A7800, B7800, or JS7800. |
-| `.jed` | JEDEC Logic | Compiled fuse map for the PLD, generated from `.pld` files via `galette`. |
+## 2. Build & Target Artifacts (`build/`)
+
+| Extension | Name | Category | Description |
+| :--- | :--- | :--- | :--- |
+| **`.o`** | Object File | Assembly | Intermediate object file produced by `ca65`. |
+| **`.bin`** | Raw Binary | ROM Image | Unsigned, unheadered binary image produced by `ld65`. |
+| **`.rom`** | Signed Hardware ROM | Hardware | 32KB to 256KB binary ROM image **signed** for hardware via `7800sign`. |
+| **`.a78`** | Emulator ROM | Emulation | Signed ROM payload combined with a 128-byte A78 emulator header via `a78tool`. |
+| **`.jed`** | JEDEC Fusemap | Hardware | Compiled fusemap binary for ATF16V8B / ATF22V10 PLDs, generated from `.pld` via `galette`. |

@@ -1,6 +1,6 @@
 ; ============================================================
 ; ym2149.inc -- YM2149 PSG
-; Compatible with DASM and MADS
+; Compatible with ca65 / cc65
 ; ============================================================
 
 ; --- Hardware Registers ---

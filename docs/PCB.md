@@ -18,7 +18,7 @@ This document explains the architecture of the Atari 7800 YM2149 sound card cart
 ---
 
 ## PCB Overview
-Each board is a **2-layer cartridge PCB** currently in the **experimental prototype phase (not production-ready)**. The project is still in its early stages, and neither board has been ordered for physical fabrication. While they interface the Atari 7800's expansion port to a YM2149 sound chip, address decoding logic, and audio pre-amplifier, mechanical verification and adjustments to fit standard cartridge shells remain a work-in-progress.
+Each board is a **2-layer cartridge PCB**. The PCB layout has been redesigned with mounting holes to fit standard Atari 7800 cartridge shells, interfacing the Atari 7800 expansion port to the YM2149 sound chip, address decoding logic, and audio pre-amplifier stage.
 
 There are two board designs, defined as separate tscircuit entry files under `pcb/`:
 
@@ -100,7 +100,7 @@ graph TD
 
 #### Docker Dev Container (Optional)
 
-An optional, preconfigured Dev Container is provided in the `.devcontainer/` folder. Opening the project in this container sets up a gold-standard environment that mirrors the GitHub Actions runner, pre-installing Node.js, Bun, Java, Cargo, KiCad 9.0, freerouting, `dasm`, and the `.NET SDK`.
+An optional, preconfigured Dev Container is provided in the `.devcontainer/` folder. Opening the project in this container sets up a gold-standard environment that mirrors the GitHub Actions runner, pre-installing Node.js, Bun, Java, Cargo, KiCad 9.0, freerouting, and `ca65`/`cc65`.
 
 > [!IMPORTANT]
 > At this stage of the project, the Dev Container is only fully configured and supported for **building and routing the PCB, schematics, and PLD logic**.

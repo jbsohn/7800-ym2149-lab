@@ -1,14 +1,15 @@
 {
-    "version": 4,
     "title": "YM2149 TEST ROM",
+    "version": 4,
     "cart_type": 0,
-    "controller_1": 1,
-    "controller_2": 1,
-    "tv_type": 0,
-    "save_device": 0,
-    "slot_passthrough": 0,
+    "controller_1": "joystick",
+    "controller_2": "joystick",
+    "tv_type": "ntsc",
+    "save_device": "none",
+    "slot_passthrough": "none",
     "mapper": 0,
     "mapper_opts": 0,
     "audio": 2048,
-    "interrupt": 0
+    "interrupt": 0,
+    "ym2149": true
 }

@@ -7,9 +7,9 @@ To iterate rapidly without burning EPROMs, you can use these specialized forks t
 The project uses a **v4 A78 Header** (an extension of the standard 128-byte header) to signal to the emulator that YM2149 hardware is present.
 
 - **Header Version**: `4` (Offset 0)
-- **Audio Location**: `$0800` written into Offset 66–67 (`A78Gen`'s `audio` field) — the real YM2149 address register location.
-- **Cart Type Flag**: Bit 2 of the Cart Type low byte (Offset 54) is force-set as a redundant "YM2149 present" flag for older emulator support.
-- **Mapper** (Offset 64): `0` = Linear (fixed 32KB, no bankswitching). `1` = 32-pin board's YM-IOA bank scheme — fixed 32KB at `$8000-$FFFF` plus a 16KB window at `$4000-$7FFF` bank-selected via the YM2149's IOA port (see [Hardware-32pin.md](Hardware-32pin.md)). `A78Gen` sets this from the `mapper` field in its config JSON; for mapper 1 the input binary must be the full 128KB or 256KB ROM image, not just the fixed bank.
+- **Audio Location**: `$0800` written into Offset 66–67 (`a78tool`'s `--audio-address` / `audio` field) — the real YM2149 address register location.
+- **Cart Type Flag**: Bit 2 of the Cart Type low byte (Offset 54) is force-set as a redundant "YM2149 present" flag for older emulator support (`--ym2149`).
+- **Mapper** (Offset 64): `0` = Linear (fixed 32KB, no bankswitching). `1` = 32-pin board's YM-IOA bank scheme — fixed 32KB at `$8000-$FFFF` plus a 16KB window at `$4000-$7FFF` bank-selected via the YM2149's IOA port (see [Hardware-32pin.md](Hardware-32pin.md)). `a78tool` sets this from the `mapper` field in its config JSON; for mapper 1 the input binary must be the full 128KB or 256KB ROM image, not just the fixed bank.
 
 > **Emulator fork compatibility note**: As of the move to the $0800/$0801 "Pokey800" mapping (see [Hardware.md](Hardware.md#memory-mapping)), Offset 66 is `$08` rather than `$40`. The `a7800`/`js7800` forks below historically detected YM2149 presence by checking **bit 6** of Offset 66 (`%01000000`), which only happened to work because $4000's high byte is `0x40`. That bit-6 check no longer matches and needs a corresponding update in those forks — until then, rely on the Cart Type bit 2 flag (Offset 54) for detection, or patch the forks to read the full 16-bit Offset 66–67 value as the actual mapped address instead of a fixed bit flag.
 

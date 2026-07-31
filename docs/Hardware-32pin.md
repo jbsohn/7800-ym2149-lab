@@ -10,13 +10,13 @@ This document covers the **32-pin ROM board** (`pcb/32pin.circuit.tsx`): a singl
 
 | Component                    | Part    | Estimated Cost | Notes                                                                  |
 | :--------------------------- | :------ | :------------- | :--------------------------------------------------------------------- |
-| **YM2149 / AY-3-8910 Clone** | U_YM    | $2.00          | PSG (KC89C72)                                                          |
-| **ATF22V10 (Logic)**         | U_GAL   | ~$1.50         | 24-pin PLD: address decode + bank mapping                              |
-| **AT27C010/020/040 (EPROM)** | U_ROM   | $2.00          | 128KB / 256KB (512KB part usable, top half only); native DIP-32 socket |
-| **74HCT373 (Octal Latch)**   | U_LATCH | $0.40          | Data bus isolation                                                     |
-| **LM358 (Op-Amp)**           | U_AMP   | $0.10          | Summing amp for audio out                                              |
-| **Passives (R/C)**           | —       | $0.30          | Reset network, audio mixing, decoupling, 4× bank pull-ups              |
-| **Total (Excl. PCB)**        |         | **~$6.30**     |                                                                        |
+| **YM2149 / AY-3-8910 Clone** | U_YM    | $2.00 USD      | PSG (KC89C72)                                                          |
+| **ATF22V10 (Logic)**         | U_GAL   | ~$1.50 USD     | 24-pin PLD: address decode + bank mapping                              |
+| **AT27C010/020/040 (EPROM)** | U_ROM   | $2.00 USD      | 128KB / 256KB (512KB part usable, top half only); native DIP-32 socket |
+| **74HCT373 (Octal Latch)**   | U_LATCH | $0.40 USD      | Data bus isolation                                                     |
+| **LM358 (Op-Amp)**           | U_AMP   | $0.10 USD      | Summing amp for audio out                                              |
+| **Passives (R/C)**           | —       | $0.30 USD      | Reset network, audio mixing, decoupling, 4× bank pull-ups              |
+| **Total (Excl. PCB)**        |         | **~$6.30 USD** |                                                                        |
 
 ## Logic Compilation (ATF22V10)
 

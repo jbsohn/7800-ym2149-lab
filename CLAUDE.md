@@ -2,36 +2,34 @@
 
 ## Build Commands
 
-- Build tools, ROMs, and `.a78` files: `make all`
-- Build only .NET tools: `make tools`
+- Build ROMs and `.a78` files: `make all`
 - Build only logic ROMs and signed binaries: `make rom`
 - Build only emulator-ready `.a78` files: `make a78`
 - Build JEDEC files from `pld/*.pld` sources: `make logic`
-- Generate verification WAV files: `make wav`
-- Run specific tool: `dotnet run --project tools/<ToolName>/<ToolName>.csproj -- <args>`
+- Build PCB gerbers (32-pin): `make pcb`
+- Build PCB gerbers (28-pin): `make pcb-28pin`
 - Clean all build artifacts: `make clean`
+
+## External Repositories & Tooling
+
+- **YM Sound & Music Toolchain**: [`lokey-ym2149-tools`](file:///Users/john/Projects/lokey-ym2149-tools) — Rust crate workspace (`lym`, `ym-core`).
+- **Atari 7800 Header Tools**: [`lokey-7800-tools`](file:///Users/john/Projects/lokey-7800-tools) — Rust crate (`a78tool`).
 
 ## Code Style & Standards
 
-### 6502 Assembly (DASM)
+### 6502 Assembly (ca65 / ld65)
 
+- **Assembler / Linker**: Standardize on `ca65` and `ld65` (cc65 suite).
 - **Formatting**: 8-space indentation for instructions, 0-space for labels.
 - **Naming**: 
   - `UPPER_CASE` for constants, offsets, and hardware registers (e.g., `MSTAT`, `NUM_REGS`).
   - `snake_case` for labels, RAM variables, and code (e.g., `play_frame`, `music_ptr`).
-- **Vectors**: All ROMs must include standard Atari 7800 vectors at the end.
+- **Linker Configurations**: Use `examples/a7800.cfg` for 32KB fixed ROMs or `examples/a7800_banked.cfg` for 256KB banked ROMs.
 - **Memory Map**:
   - YM2149 Address Register: `$0800`
   - YM2149 Data Register: `$0801`
-  - ROM Start: `$8000` (for 32KB images)
-
-### C# / .NET
-
-- **Version**: .NET 10.0+
-- **Style**: Standard C# conventions (PascalCase for classes/methods, camelCase for local variables).
-- **Architecture**: Core logic resides in `tools/Core/`, utilized by CLI wrappers.
-- **Performance**: Use `ReadOnlySpan<byte>` for binary parsing where possible.
-- **Testing**: Use `ymbtowav` to verify that bitmask compression is lossless.
+  - Switched Bank Window: `$4000-$7FFF` (via YM2149 IOA port)
+  - Fixed ROM Block: `$8000-$FFFF`
 
 ### PCB Design (tscircuit)
 
@@ -42,11 +40,9 @@
 
 ## Project Structure
 
-- `ca65/`: 6502 assembly sample code and reference player (ca65).
-- `examples/`: Original DASM assembly samples.
-- `docs/`: Technical reference and deep-dive guides.
-- `tools/`: .NET conversion tools and Sigrok diagnostic scripts.
+- `examples/`: ca65 6502 assembly source files (`.s`) and A78 header configs (`.json`).
+- `include/`: ca65 header files (`maria.inc`, `ym2149.inc`, `stella.inc`) and ld65 linker scripts (`a7800.cfg`, `a7800_banked.cfg`).
+- `docs/`: Hardware specs, PCB pipeline docs, assembly guidelines, and emulation references.
 - `pld/`: Programmable logic (ATF16V8B / ATF22V10 PLD) sources.
-- `pcb/`: tscircuit PCB design files.
+- `pcb/`: tscircuit PCB design files (`28pin.circuit.tsx`, `32pin.circuit.tsx`, `route_and_patch.py`).
 - `ym-samples/`: Original Atari ST music sources.
-- `vgm-samples/`: VGM/VGZ music sources.

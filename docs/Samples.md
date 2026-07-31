@@ -1,57 +1,44 @@
-# SDK Samples & Building Guide
+# Samples & Building Guide
 
-This guide covers the core sample applications included with the Lokey-YM SDK and provides instructions on how to build them.
-
-## 1. Prerequisites
-
-To build the samples and music tracks, you need the following:
-
-* **Assembler**: Either **DASM** or **Mad Assembler (MADS)**.
-* **.NET SDK**: Required for the diagnostic and processing tools. These have been verified on Linux and macOS.
+This guide covers the sample applications included with the Lokey-YM repository and provides instructions on how to build them using **ca65** and **ld65**.
 
 ---
 
-## 2. The Core Samples
+## 1. Prerequisites
 
-The samples are located in the `examples/` directory and demonstrate different aspects of YM2149 sound production on the Atari 7800.
+To build the samples and cartridge ROMs, you need the following:
 
-### Universal Samples (DASM & MADS)
+* **Assembler & Linker**: **ca65** and **ld65** from the `cc65` toolchain suite.
+* **Header Tool**: **a78tool** ([`lokey-7800-tools`](file:///Users/john/Projects/lokey-7800-tools)).
+* **Signing Tool**: **7800sign**.
 
-These use a "Universal Subset" of 6502 assembly compatible with both assemblers.
+---
 
-* **Universal Triad (`triad.asm`)**: A bare-metal diagnostic test that plays a C-Major triad (C3, E3, G3). Shows direct register writes to `$0800`/`$0801`.
-* **Universal Player (`player.asm`)**: The core engine for playing compressed `.ymb` files with high-precision fractional timing.
+## 2. Core Samples
 
-### MADS "Pro" Sample (MADS Only)
+The samples reside in `examples/`:
 
-These showcase high-level features available exclusively in **Mad Assembler (MADS)**.
-
-* **MADS Pro Triad (`triad_mads.asm`)**: A modernized version of the triad demo using encapsulated procedures (`.PROC`), register-based parameter passing (`.REG`), and ergonomic moves (`MVA`).
+* **32-Pin Bank Switching Demo (`examples/bank.s`)**: Demonstrates hardware bank switching via the YM2149 IOA port across 14 switched banks (`$4000-$7FFF`) using ca65 macros, segment definitions, and `ld65` memory configurations (`examples/a7800_banked.cfg`).
 
 ---
 
 ## 3. Build Instructions
 
-The SDK supports a dual-assembler workflow via the root `Makefile`.
+Builds are managed via the root `Makefile`.
 
 ### Build Commands
 
 | Target | Command | Description |
 | :--- | :--- | :--- |
-| **Emulator (DASM)** | `make a78` | Build the universal samples and music using DASM. |
-| **Emulator (MADS)** | `make a78 ASSEMBLER=mads` | Build the universal samples and music using MADS. |
-| **Pro Demo** | `make pro` | Build the MADS-exclusive "Pro" triad demo. |
-| **Hardware ROMs** | `make rom` | Build and sign raw 32K binary images for EPROMs. |
-| **Verification** | `make wav` | Generate `.wav` files for all music tracks. |
+| **Banked Demo** | `make bank` | Build the 32-pin YM-IOA bank switching demo (`build/bank.a78` + `build/bank.rom`). |
+| **Logic Files** | `make logic` | Build PLD JEDEC fusemaps via `galette`. |
+| **PCB Gerbers** | `make pcb` | Compile and autoroute 32-pin PCB layout. |
 | **Cleanup** | `make clean` | Remove all generated build artifacts. |
 
 ### Build Results
-All commands output to the `build/` directory:
-- **`.a78`**: Packed ROM with a 128-byte header for emulators (a7800, js7800).
-  > [!NOTE]
-  > The `a78gen` tool used for header generation is a **work in progress**. Future updates will provide improved mapping for complex cartridge header types and bank-switching configurations.
-- **`.rom`**: Raw 32,768-byte binary image, signed for hardware.
-
+All ROM build artifacts output to `build/`:
+- **`.a78`**: Emulator ROM packaged with a 128-byte header via `a78tool`.
+- **`.rom`**: Raw binary ROM image, signed for hardware via `7800sign`.
 
 ---
 
@@ -59,15 +46,11 @@ All commands output to the `build/` directory:
 
 ### Signing for Real 7800 Hardware
 
-Atari 7800 cartridges must be signed. While `make rom` handles this automatically, you can sign a raw binary manually:
+Atari 7800 cartridges must be signed. `make bank` and `make rom` handle this automatically using `7800sign`:
 
 ```bash
-7800sign -w build/your_app.rom
-7800sign -t build/your_app.rom
+7800sign -w build/bank.rom
+7800sign -t build/bank.rom
 ```
 
-### ROM Footer Requirements
-
-For the signature to be valid, the ROM must have a specific 8-byte footer starting at `$FFF8`. In the SDK samples, this is handled natively for both assemblers.
-
-For more details on writing compatible code, see the **[Universal Assembly Guidelines](UniversalAssemblyGuidelines.md)**.
+For guidelines on ca65 assembly and linker configurations, see the **[ca65 Assembly Guidelines](Ca65AssemblyGuidelines.md)**.

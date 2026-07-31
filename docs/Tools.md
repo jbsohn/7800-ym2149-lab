@@ -1,81 +1,78 @@
-# Toolchain & Diagnostics Guide
+# Toolchain & Architecture Guide
 
-This document describes the compilation, conversion, verification, and diagnostic tools used in the Lokey-YM project. All tools require the **.NET SDK**.
-
-> [!IMPORTANT]
-> These C# tools are **experimental** and primarily intended for **early testing** of the YM2149 on Atari 7800 cartridges.
-> 
-> The C# implementation was a temporary hack to quickly parse and verify Atari ST captures. In future development, these tools will be rewritten in C++ and optimized for a driver architecture that supports simultaneous sound effects and music playback.
-
-> [!NOTE]
-> The current toolchain and the `.ymb` music format were developed as a proof of concept to quickly get YM music playing on physical cartridges, and are subject to change in future revisions.
+This document describes the compilation, conversion, verification, and packaging tools used across the Lokey 7800 YM project ecosystem.
 
 ---
 
-## 1. Music Conversion & Verification
+## 1. Multi-Repository Toolchain Architecture
 
-We provide tools to convert register streams into our custom, compressed `.ymb` music format and verify the output.
+The tooling ecosystem is split across three dedicated repositories:
 
-### `YmToYmb` (Atari ST Captures)
-Converts Atari ST **YM** files (register dumps from legacy ST trackers).
-*   **Formats**: YM2, YM3, YM4, YM5, and YM6.
-*   **Usage**: 
-    ```bash
-    dotnet run --project tools/YmToYmb/YmToYmb.csproj -- <input.ym> [options]
-    ```
-
-### `VgmToYmb` (Modern Trackers)
-Converts **VGM/VGZ** command streams. This is the preferred route for new compositions.
-*   **Trackers**: [Furnace Tracker](https://tildearrow.org/furnace) or [Arkos Tracker](https://www.julien-nevo.com/arkostracker/).
-*   **Usage**: 
-    ```bash
-    dotnet run --project tools/VgmToYmb/VgmToYmb.csproj -- <input.vgm> [options]
-    ```
-
-### `YmbToWav` (Audio Verification)
-Renders `.ymb` music data back into standard `.wav` audio to verify conversion accuracy.
-*   **Accuracy**: Aims to reproduce the YM2149's logarithmic volume curve and hardware envelopes.
-*   **Usage**: 
-    ```bash
-    dotnet run --project tools/YmbToWav/YmbToWav.csproj -- build/song.ymb [output.wav]
-    ```
+```
+├── lokey-7800-ym2149 (This Repo)
+│   ├── pcb/          <-- tscircuit React components & KiCad post-routing scripts
+│   ├── pld/          <-- ATF16V8B / ATF22V10 PLD address decoding equations (galette)
+│   └── examples/     <-- ca65 6502 assembly drivers & bank-selection demos
+│
+├── lokey-ym2149-tools (Generic YM2149 Tools)
+│   ├── ym-core/      <-- Rust core library (delta compiler, YM parsers, audio engine)
+│   └── lym/          <-- Unified CLI binary (song render/play, sfx render/play, mix)
+│
+└── lokey-7800-tools (Atari 7800 Developer Utilities)
+    └── a78tool/      <-- Modern A78 ROM header utility (v1, v3, v4, mappers 0-255)
+```
 
 ---
 
-## 2. Core Music Processing Theory
+## 2. Music & Sound Effect Compilation (`lym`)
 
-For the complete technical layout of the generated output, see the **[YMB Format Technical Specification](YmbFormat.md)**.
+Generic YM2149 audio compilation tools reside in [`lokey-ym2149-tools`](file:///Users/john/Projects/lokey-ym2149-tools).
 
-1.  **Pitch Scaling (The Clock Problem)**: The Atari ST's YM2149 chip is clocked at **2.0 MHz**, while the Atari 7800's PHI2 clock (which drives the YM chip in this project) is **~1.79 MHz** (NTSC). Without scaling, notes would sound flat. The tools multiply frequency and noise registers by a `pitchScale` ratio (~0.895) so music plays in tune.
-2.  **Delta Masking**: To avoid writing 14 bytes/frame, a **16-bit bitmask** precedes every frame. If a bit is `1`, the register value follows. If `0`, the register remains unchanged from the previous frame. Silent or repetitive frames shrink from 14 bytes down to just 2 bytes.
-3.  **Pattern Deduplication**: The converter slices songs into fixed-size patterns, identifies identical patterns, and stores only unique pattern blocks. It automatically tests multiple pattern sizes to find the best compression ratio.
+### Features & Capabilities
+- **Song Compilation (`.ysg`)**: Compiles `.ym` (Atari ST) files into pattern-deduplicated, delta-encoded binary streams for 6502 replayers.
+- **Sound Effects (`.yfx`)**: Compiles JSON, CSV, or AYFX (`.afx`) sound effects into fixed-width 5-byte VBI override streams.
+- **Real-Time Auditioning & Mixing**: Auditions tracks via `cpal` audio backend and interactively mixes background music with key-triggered sound effects.
 
----
+### Command Quick Reference
+```bash
+# Render YM track to compressed .ysg binary
+lym song render --input ym-samples/ND-Loader.ym --output build/ND-Loader.ysg
 
-## 3. Hardware Signal Diagnostics
+# Play .ysg track locally
+lym song play --input build/ND-Loader.ysg
 
-These scripts help validate physical signals coming off the Atari 7800 cartridge edge connector before they reach the ROM or YM2149.
-
-### `tools/Scripts/ValidateCartSignals.cs`
-Validates physical signals coming off the edge connector.
-*   **Requirements**: `sigrok-cli` and a logic analyzer (e.g., `fx2lafw`).
-*   **Target Signals**: Analyzes `PHI2`, `R/W`, `HALT`, and `A15` for stable transitions.
-
-### `tools/Scripts/ValidateLogicSignals.cs` & `tools/Scripts/ValidateLatchEnable.cs`
-Advanced timing diagnostics used to detect mid-cycle address bus noise or "shattered" pulses.
-*   **Timing Check**: Ensures `YM_LE`, `BDIR`, and `BC1` only trigger when the `PHI2` clock is stable.
-*   **BC1 Monitor**: Confirms the logic equations correctly identify register selection (A0=0) vs. data writes.
+# Render sound effect JSON to .yfx binary
+lym sfx render --input tests/fixtures/test_sfx.json --output build/laser.yfx
+```
 
 ---
 
-## 4. ROM Packaging Tools
+## 3. Atari 7800 ROM Header Packaging (`a78tool`)
 
-### `tools/A78Gen/Program.cs`
-Generates a 128-byte A78 header and packages a raw binary for emulator use.
-*   **Status**: **Work in Progress**.
-*   **Mapper**: set `"mapper": 1` in the config JSON to package the 32-pin board's YM-IOA bank scheme (see [Emulation.md](Emulation.md#a78-header--emulator-detection)) — the input binary must then be the full 128KB or 256KB ROM image, not just the fixed 32KB bank. `"mapper": 0` (default) keeps the original fixed-32KB-only behavior.
-*   **Usage**:
-    ```bash
-    dotnet run --project tools/A78Gen/A78Gen.csproj -- <input.bin> <config.json> -o <output.a78>
-    ```
-*   **Planned Improvements**: Mapping for other cartridge header types (SuperGame, Activision, etc.) beyond the fixed-32KB and YM-IOA-banked cases.
+Atari 7800 header utilities reside in [`lokey-7800-tools`](file:///Users/john/Projects/lokey-7800-tools).
+
+### Features & Capabilities
+- Combines raw 6502 ROM binaries (`.bin`/`.rom`) with 128-byte `.a78` emulator headers.
+- Supports v1, v3, and v4 header specifications.
+- Handles YM2149 expansion flags (`--ym2149`), POKEY flags (`--pokey`), TV formats (NTSC/PAL), and custom mappers (`mapper 0` for linear 32KB, `mapper 1` for 32-pin YM-IOA bank switching).
+
+### Command Quick Reference
+```bash
+# Generate .a78 emulator ROM with JSON configuration
+a78tool generate -i build/game.bin -o build/game.a78 -c header.json
+
+# Inspect .a78 header fields
+a78tool inspect build/game.a78
+```
+
+---
+
+## 4. Hardware Logic Compilation (`galette`)
+
+PLD equations for ATF16V8B and ATF22V10 logic chips are compiled using `galette`:
+
+```bash
+galette pld/rom_ym_28pin.pld
+galette pld/rom_ym_32pin.pld
+```
+This produces JEDEC fusemaps (`.jed`) ready for programming onto physical GAL/ATF chips.

@@ -8,13 +8,13 @@ The 28-pin board is designed for high performance at a hobbyist-friendly price p
 
 | Component | Estimated Cost | Notes |
 | :--- | :--- | :--- |
-| **YM2149 / AY-3-8910 Clone** | $2.00 | Targeted price for bulk/clones |
-| **ATF16V8B (PLD)** | $0.85 | Modern replacement for legacy GAL16V8 |
-| **27C256 (32KB EPROM)** | $1.50 | Standard game ROM (16KB/64KB parts also supported, see jumper table below) |
-| **74HCT373 (Octal Latch)** | $0.40 | Address latching |
-| **LM358 (Op-Amp)** | $0.10 | Active audio amplification |
-| **Passives (R/C)** | $0.15 | Reset circuit and audio stage |
-| **Total (Excl. PCB)** | **~$5.00** | |
+| **YM2149 / AY-3-8910 Clone** | $2.00 USD | Targeted price for bulk/clones |
+| **ATF16V8B (PLD)** | $0.85 USD | Modern replacement for legacy GAL16V8 |
+| **27C256 (32KB EPROM)** | $1.50 USD | Standard game ROM (16KB/64KB parts also supported, see jumper table below) |
+| **74HCT373 (Octal Latch)** | $0.40 USD | Address latching |
+| **LM358 (Op-Amp)** | $0.10 USD | Active audio amplification |
+| **Passives (R/C)** | $0.15 USD | Reset circuit and audio stage |
+| **Total (Excl. PCB)** | **~$5.00 USD** | |
 
 ## Logic Compilation (ATF16V8B)
 

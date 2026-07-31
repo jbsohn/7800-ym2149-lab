@@ -1,6 +1,6 @@
 ; ============================================================
 ; stella.inc -- Atari 2600
-; Compatible with DASM and MADS
+; Compatible with ca65 / cc65
 ; ============================================================
 
 ; --- STELLA (TIA) REGISTER ADDRESSES ---
