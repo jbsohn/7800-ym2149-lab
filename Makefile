@@ -1,10 +1,9 @@
 # Atari 7800 YM2149 Project Makefile (ca65 / cc65 toolchain)
 
 # --- Toolchain Setup ---
-export PATH           := $(HOME)/cc65/bin:$(PATH)
 CA65                  := ca65
 LD65                  := ld65
-A78TOOL               ?= $(shell command -v a78tool 2>/dev/null || echo "cargo run --manifest-path ../lokey-7800-tools/Cargo.toml --bin a78tool --")
+A78TOOL               := a78tool
 SIGN                  := 7800sign
 
 # --- Configuration & Directories ---
@@ -12,13 +11,8 @@ BUILD_DIR             := build
 SRC_DIR               := examples
 INC_DIR               := include
 
-# --- Toolchain Include & Linker Script Discovery ---
-LOKEY_7800_TOOLS_DIR  ?= $(firstword $(wildcard $(HOME)/Projects/lokey-7800-tools ../lokey-7800-tools /usr/local/share/lokey-7800-tools))
-INC_7800_TOOLS        := $(LOKEY_7800_TOOLS_DIR)/include
-EX_7800_TOOLS         := $(LOKEY_7800_TOOLS_DIR)/examples
-
-CA65_FLAGS            := -I $(INC_DIR) -I $(INC_7800_TOOLS)
-LD65_FLAGS            := --cfg-path $(SRC_DIR) --cfg-path $(EX_7800_TOOLS)
+CA65_FLAGS            := -I $(INC_DIR)
+LD65_FLAGS            := --cfg-path $(SRC_DIR)
 
 # --- OS Detection & KiCad Setup ---
 UNAME_S := $(shell uname -s)
@@ -34,22 +28,27 @@ endif
 BANKED_A78S    := $(BUILD_DIR)/bank.a78
 BANKED_ROMS    := $(BUILD_DIR)/bank.rom
 
-.PHONY: all help clean logic rom a78 pcb pcb-28pin pcb-32pin schematic schematic-28pin schematic-32pin previews previews-28pin previews-32pin bank
+.PHONY: all help clean distclean logic rom a78 pcb pcb-28pin pcb-32pin schematic schematic-28pin schematic-32pin previews previews-28pin previews-32pin bank
 
 all: bank logic
 
 # --- PCB Targets ---
-pcb-28pin:
+pcb/node_modules: pcb/package.json
+	@echo "Installing PCB dependencies in pcb/..."
+	@cd pcb && npm install
+	@touch pcb/node_modules
+
+pcb-28pin: pcb/node_modules
 	@echo "Exporting and autorouting 28-pin PCB from tscircuit..."
 	@cd pcb && $(KICAD_PYTHON) ./route_and_patch.py 28pin.circuit.tsx
 
-pcb-32pin:
+pcb-32pin: pcb/node_modules
 	@echo "Exporting and autorouting 32-pin PCB from tscircuit..."
 	@cd pcb && $(KICAD_PYTHON) ./route_and_patch.py 32pin.circuit.tsx
 
 pcb: pcb-32pin
 
-schematic-28pin:
+schematic-28pin: pcb/node_modules
 	@echo "Exporting 28-pin schematic SVG..."
 	@mkdir -p $(BUILD_DIR)
 	@cd pcb && npx tsci export -f schematic-svg 28pin.circuit.tsx -o ../$(BUILD_DIR)/schematic-28pin.svg
@@ -60,7 +59,7 @@ schematic-28pin:
 		echo "Warning: 'rsvg-convert' not found. Skipping PNG schematic generation (only SVG created)."; \
 	fi
 
-schematic-32pin:
+schematic-32pin: pcb/node_modules
 	@echo "Exporting 32-pin schematic SVG..."
 	@mkdir -p $(BUILD_DIR)
 	@cd pcb && npx tsci export -f schematic-svg 32pin.circuit.tsx -o ../$(BUILD_DIR)/schematic-32pin.svg
@@ -148,6 +147,9 @@ clean:
 	@rm -rf $(BUILD_DIR)
 	@rm -rf pcb/build/
 
+distclean: clean
+	@rm -rf pcb/node_modules
+
 help:
 	@echo "Atari 7800 YM2149 Cartridge Build System (ca65 / ld65)"
 	@echo ""
@@ -158,4 +160,5 @@ help:
 	@echo "  make pcb       - Alias for 'make pcb-32pin'"
 	@echo "  make previews  - Export front/back SVG previews of current PCB design"
 	@echo "  make logic     - Build PLD logic files (.jed via galette)"
-	@echo "  make clean     - Wipe all build artifacts"
+	@echo "  make clean     - Wipe build artifacts"
+	@echo "  make distclean - Wipe build artifacts AND pcb/node_modules"

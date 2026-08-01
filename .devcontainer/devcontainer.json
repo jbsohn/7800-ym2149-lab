@@ -1,8 +1,15 @@
 {
   "name": "Atari 7800 YM2149 Dev Container",
   "build": {
-    "dockerfile": "Dockerfile"
+    "dockerfile": "Dockerfile",
+    "options": [
+      "--platform=linux/amd64"
+    ]
   },
+  "runArgs": [
+    "--platform=linux/amd64"
+  ],
+  "postCreateCommand": "cd pcb && npm install",
   "customizations": {
     "vscode": {
       "extensions": [

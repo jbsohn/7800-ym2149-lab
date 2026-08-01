@@ -11,7 +11,7 @@ This document describes the file extensions and build artifacts used within the 
 | Extension | Name | Category | Description |
 | :--- | :--- | :--- | :--- |
 | **`.s`** | ca65 Assembly Source | 6502 Drivers | 6502 assembly source files for bank selection demos and drivers (e.g., `examples/bank.s`). |
-| **`.inc`** | ca65 Include Header | 6502 Equates | Register equate definitions for Atari 7800 MARIA, TIA, and YM2149 (e.g., `include/maria.inc`, `ym2149.inc`). |
+| **`.inc`** | ca65 Include Header | 6502 Equates | Register equate definitions for Atari 7800 MARIA, TIA, and YM2149 (e.g., `../examples/maria.inc`, `ym2149.inc`). |
 | **`.cfg`** | ld65 Linker Script | Linker Config | Memory layout definitions for fixed 32KB (`examples/a7800.cfg`) and 256KB banked ROMs (`examples/a7800_banked.cfg`). |
 | **`.pld`** | CUPL Logic Source | PLD Logic | GAL/PLD logic equations for address decoding and YM bank switching (e.g., `pld/rom_ym_32pin.pld`). |
 | **`.circuit.tsx`** | tscircuit Component | PCB Design | Code-driven React PCB layout definitions in `pcb/` (e.g., `28pin.circuit.tsx`, `32pin.circuit.tsx`). |

@@ -1,12 +1,12 @@
 # Start from KiCad 9.0 base image, which has KiCad CLI, Python 3, and related KiCad requirements
-FROM ghcr.io/kicad/kicad:9.0
+FROM --platform=linux/amd64 ghcr.io/kicad/kicad:9.0
 
 USER root
 
 # Avoid prompts from apt
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install core tools, Node.js, Java, Cargo/Rust, cc65 (Git master), and build dependencies
+# Install core tools, Node.js, Java, Cargo/Rust, cc65 (OBS), and build dependencies
 RUN apt-get update -y && \
     apt-get install -y --no-install-recommends \
         curl \
@@ -18,7 +18,7 @@ RUN apt-get update -y && \
         ca-certificates \
         gnupg \
         unzip && \
-    # Install Node.js 20.x \
+    # Install Node.js 20.x
     curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
     apt-get install -y nodejs && \
     npm install -g bun && \
@@ -30,18 +30,22 @@ RUN apt-get update -y && \
     ln -sf /usr/local/lib/jvm/amazon-corretto-25*/bin/java /usr/local/bin/java && \
     # Install Freerouting
     wget -q "https://github.com/freerouting/freerouting/releases/download/v2.2.4/freerouting-2.2.4.jar" -O /usr/local/lib/freerouting.jar && \
-    # Install Cargo and Galette (for PLD compilation) \
+    # Install Cargo and Galette (for PLD compilation)
     apt-get install -y --no-install-recommends cargo && \
     cargo install galette --version 0.3.0 --root /usr/local --locked && \
-    # Build latest cc65 toolchain (ca65, ld65) from GitHub master branch
-    git clone https://github.com/cc65/cc65.git /tmp/cc65 && \
-    make -C /tmp/cc65 -j$(nproc) && \
-    make -C /tmp/cc65 install PREFIX=/usr/local && \
-    rm -rf /tmp/cc65 && \
+    # Install cc65 toolchain (ca65, ld65) from OBS pre-built package
+    echo 'deb http://download.opensuse.org/repositories/home:/strik/Debian_12/ /' | tee /etc/apt/sources.list.d/home:strik.list && \
+    curl -fsSL https://download.opensuse.org/repositories/home:strik/Debian_12/Release.key | gpg --dearmor | tee /etc/apt/trusted.gpg.d/home_strik.gpg > /dev/null && \
+    apt-get update -y && \
+    apt-get install -y --no-install-recommends cc65 && \
     # Compile 7800sign utility
     curl -fsSL https://raw.githubusercontent.com/7800-devtools/7800basic/master/7800sign.c -o /tmp/7800sign.c && \
     gcc -O2 /tmp/7800sign.c -o /usr/local/bin/7800sign && \
     rm /tmp/7800sign.c && \
+    # Install a78tool (Atari 7800 ROM header utility)
+    wget -q "https://github.com/jbsohn/lokey-7800-tools/releases/download/0.0.1/a78tool_amd64.deb" -O /tmp/a78tool_amd64.deb && \
+    apt-get install -y /tmp/a78tool_amd64.deb && \
+    rm /tmp/a78tool_amd64.deb && \
     # Clean up apt
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
