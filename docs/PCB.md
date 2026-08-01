@@ -43,10 +43,12 @@ graph TD
 
 ## Environment Setup & Build Commands
 
-### Requirements
-- **Node.js (v18+)**
-- **KiCad (v7.0+)** with `kicad-cli` and `pcbnew` Python module.
-- **Java JRE (21+)** & **Freerouting** (`FREEROUTING_JAR` or `freerouting` binary on `PATH`).
+### Setup Options
+- **Option A (Docker Dev Container — Recommended):** Open `.devcontainer/` in VS Code. Pre-loaded with KiCad 9, Java 25, Freerouting, Node.js/Bun, `galette`, and `ca65`/`ld65`.
+- **Option B (Native Requirements):**
+  - **Node.js (v18+) & Bun (`npm install -g bun`)**: Required for `tscircuit` compilation.
+  - **KiCad (v9.0+)**: `kicad-cli` executable and `pcbnew` Python module.
+  - **Java JRE (21+) & Freerouting**: `FREEROUTING_JAR` set to `freerouting-2.2.4.jar` (or `freerouting` binary on `PATH`).
 
 ### Build Commands
 

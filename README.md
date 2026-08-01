@@ -37,7 +37,31 @@ The **Atari 7800** acts as the **Consumer** of these assets. By bridging the har
   - **32-Pin Board**: Single YM2149, ATF22V10 PLD, native DIP-32 socket with software bank switching via the YM IOA port (fixed 32KB code bank at `$8000–$FFFF` + switched 16KB data window at `$4000–$7FFF`, up to 256KB).
 - **Automated PCB & PLD CI Pipeline**:
   - **GitHub Actions**: Rebuilds PLD logic (`.jed`) and both PCBs from source on every push/PR via a containerized toolchain (KiCad 9, Freerouting v2.2.4, galette 0.3.0). Tagged releases (`v*`) automatically package and publish Gerbers (`gerbers-28pin.zip`, `gerbers-32pin.zip`) and fusemaps to GitHub Releases.
-  - **Docker Dev Container**: Local development environment mirroring CI runner for building PCBs, schematics, and PLD logic.
+
+---
+
+## Development Environment & Requirements
+
+### Option A: Docker Dev Container (Recommended — Zero Setup)
+
+A preconfigured Docker Dev Container is provided in `.devcontainer/`. Opening the project in VS Code / GitHub Codespaces pre-loads a gold-standard environment matching CI:
+
+- KiCad 9.0 (`kicad-cli` & `pcbnew`)
+- Java 25 & Freerouting CLI
+- Node.js 20 & Bun
+- `galette` 0.3.0 (PLD logic compiler)
+- `ca65` & `ld65` (6502 assembly toolchain)
+
+### Option B: Local Native Toolchain Requirements
+
+If building natively outside the container, install the following requirements:
+
+1. **6502 Toolchain**: `ca65` and `ld65` (from `cc65`), `a78tool` (from [`lokey-7800-tools`](https://github.com/jbsohn/lokey-7800-tools)), and `7800sign`.
+2. **PLD Logic Assembler**: `galette` 0.3.0 (`cargo install galette --version 0.3.0`).
+3. **PCB Layout & Routing**:
+   - Node.js (v18+) & Bun (`npm install -g bun`) for `tscircuit` compilation in `pcb/`.
+   - KiCad (v9.0+) with `kicad-cli` and `pcbnew` Python scripting environment.
+   - Java JRE (21+) with Freerouting (`FREEROUTING_JAR` set to `freerouting-2.2.4.jar`).
 
 ---
 
