@@ -9,7 +9,7 @@ SIGN                  := 7800sign
 # --- Configuration & Directories ---
 BUILD_DIR             := build
 SRC_DIR               := examples
-INC_DIR               := include
+INC_DIR               := examples
 
 CA65_FLAGS            := -I $(INC_DIR)
 LD65_FLAGS            := --cfg-path $(SRC_DIR)

@@ -12,8 +12,8 @@
 
 ## External Repositories & Tooling
 
-- **YM Sound & Music Toolchain**: [`lokey-ym2149-tools`](file:///Users/john/Projects/lokey-ym2149-tools) — Rust crate workspace (`lym`, `ym-core`).
-- **Atari 7800 Header Tools**: [`lokey-7800-tools`](file:///Users/john/Projects/lokey-7800-tools) — Rust crate (`a78tool`).
+- **YM Sound & Music Toolchain**: [`lokey-ym2149-tools`](https://github.com/jbsohn/lokey-ym2149-tools) — Rust crate workspace (`lym`, `ym-core`).
+- **Atari 7800 Header Tools**: [`lokey-7800-tools`](https://github.com/jbsohn/lokey-7800-tools) — Rust crate (`a78tool`).
 
 ## Code Style & Standards
 
@@ -40,9 +40,8 @@
 
 ## Project Structure
 
-- `examples/`: ca65 6502 assembly source files (`.s`) and A78 header configs (`.json`).
-- `include/`: ca65 header files (`maria.inc`, `ym2149.inc`, `stella.inc`) and ld65 linker scripts (`a7800.cfg`, `a7800_banked.cfg`).
-- `docs/`: Hardware specs, PCB pipeline docs, assembly guidelines, and emulation references.
-- `pld/`: Programmable logic (ATF16V8B / ATF22V10 PLD) sources.
+- `examples/`: ca65 6502 assembly source files (`.s`), header equates (`.inc`), linker scripts (`.cfg`), and A78 header configs (`.json`).
+- `docs/`: Hardware specs, PCB pipeline docs, and emulation references.
+- `pld/`: Programmable logic (ATF16V8B / ATF22V10 PLD) sources (`.pld`).
 - `pcb/`: tscircuit PCB design files (`28pin.circuit.tsx`, `32pin.circuit.tsx`, `route_and_patch.py`).
 - `ym-samples/`: Original Atari ST music sources.
