@@ -32,6 +32,8 @@ The current logic implementation is gated by the `!RW` (Read/Write) line. This m
 
 ### 7800 Cartridge Edge (32-Pin)
 
+![Atari 7800 Cartridge Edge Connector Pinout Diagram](7800-cart-pinout.jpg)
+
 From [AtariHQ](https://atarihq.com/danb/7800cart/a7800cart.shtml):
 
 | Pin (1–16) | Signal | Pin (32–17) | Signal |

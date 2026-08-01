@@ -1,23 +1,18 @@
-# Atari 7800 YM2149 Project Makefile
+# Atari 7800 YM2149 Project Makefile (ca65 / cc65 toolchain)
 
-# --- Build Configuration ---
-# Options: dasm, mads
-ASSEMBLER ?= dasm
+# --- Toolchain Setup ---
+CA65                  := ca65
+LD65                  := ld65
+A78TOOL               := a78tool
+SIGN                  := 7800sign
 
 # --- Configuration & Directories ---
-BUILD_DIR     := build
-BIN_DIR       := bin
-SRC_DIR       := examples
-YM_DIR        := ym-samples
-VGM_DIR       := vgm-samples
-PREVIEW_FLAGS := -s 2 -f 5000
+BUILD_DIR             := build
+SRC_DIR               := examples
+INC_DIR               := examples
 
-# --- Tool Mapping ---
-YM2BIN        := $(BIN_DIR)/ymtoymb
-VGM2BIN       := $(BIN_DIR)/vgmtoymb
-WAVTOOL       := $(BIN_DIR)/ymbtowav
-A78GEN        := $(BIN_DIR)/a78gen
-SIGN          := 7800sign
+CA65_FLAGS            := -I $(INC_DIR)
+LD65_FLAGS            := --cfg-path $(SRC_DIR)
 
 # --- OS Detection & KiCad Setup ---
 UNAME_S := $(shell uname -s)
@@ -29,59 +24,31 @@ else
   KICAD_PYTHON ?= python3
 endif
 
-# --- Assembler Setup ---
-ifeq ($(ASSEMBLER),mads)
-  ASM_CMD   := mads
-  ASM_FLAGS := -i:include -i:$(BUILD_DIR) -f -fv:255 -c -d:MADS=1
-  ASM_OUT   := -o:
-  DEF_OPT   := -d:
-else
-  ASM_CMD   := dasm
-  ASM_FLAGS := -Iinclude -I$(BUILD_DIR) -f3 -DMADS=0
-  ASM_OUT   := -o
-  DEF_OPT   := -D
-endif
-
-# --- Dynamic Asset Discovery ---
-YM_SOURCES    := $(wildcard $(YM_DIR)/*.ym) $(wildcard $(YM_DIR)/*.YM)
-VGM_SOURCES   := $(wildcard $(VGM_DIR)/*.vgm) $(wildcard $(VGM_DIR)/*.vgz)
-
-ALL_MUSIC_DATA := $(foreach f,$(YM_SOURCES) $(VGM_SOURCES),$(BUILD_DIR)/$(notdir $(basename $(f))).ymb)
-MUSIC_A78S     := $(ALL_MUSIC_DATA:.ymb=.a78)
-MUSIC_ROMS     := $(ALL_MUSIC_DATA:.ymb=.rom)
-MUSIC_WAVS     := $(ALL_MUSIC_DATA:.ymb=.wav)
-
-# Demo Discovery
-FIXED_BASE     := triad
-PRO_BASE       := triad_mads
-
-FIXED_A78S     := $(foreach f,$(FIXED_BASE),$(BUILD_DIR)/$(f).a78)
-PRO_A78S       := $(foreach f,$(PRO_BASE),$(BUILD_DIR)/$(f).a78)
-FIXED_ROMS     := $(foreach f,$(FIXED_BASE),$(BUILD_DIR)/$(f).rom)
-
-# Banked demo (32-pin board, mapper:1) -- packaged with its own
-# <name>_header.json, not the shared header.json (which is mapper:0 and
-# would silently truncate a banked image to a fixed 32KB one).
+# --- Demos & Targets ---
 BANKED_A78S    := $(BUILD_DIR)/bank.a78
 BANKED_ROMS    := $(BUILD_DIR)/bank.rom
 
-# --- Core Targets ---
-.PHONY: all help clean logic rom a78 bin wav tools pro pcb pcb-28pin pcb-32pin schematic previews previews-28pin previews-32pin bank
+.PHONY: all help clean distclean logic rom a78 pcb pcb-28pin pcb-32pin schematic schematic-28pin schematic-32pin previews previews-28pin previews-32pin bank
 
-all: tools a78
+all: bank logic
 
+# --- PCB Targets ---
+pcb/node_modules: pcb/package.json
+	@echo "Installing PCB dependencies in pcb/..."
+	@cd pcb && npm install
+	@touch pcb/node_modules
 
-pcb-28pin:
+pcb-28pin: pcb/node_modules
 	@echo "Exporting and autorouting 28-pin PCB from tscircuit..."
 	@cd pcb && $(KICAD_PYTHON) ./route_and_patch.py 28pin.circuit.tsx
 
-pcb-32pin:
+pcb-32pin: pcb/node_modules
 	@echo "Exporting and autorouting 32-pin PCB from tscircuit..."
 	@cd pcb && $(KICAD_PYTHON) ./route_and_patch.py 32pin.circuit.tsx
 
 pcb: pcb-32pin
 
-schematic-28pin:
+schematic-28pin: pcb/node_modules
 	@echo "Exporting 28-pin schematic SVG..."
 	@mkdir -p $(BUILD_DIR)
 	@cd pcb && npx tsci export -f schematic-svg 28pin.circuit.tsx -o ../$(BUILD_DIR)/schematic-28pin.svg
@@ -92,7 +59,7 @@ schematic-28pin:
 		echo "Warning: 'rsvg-convert' not found. Skipping PNG schematic generation (only SVG created)."; \
 	fi
 
-schematic-32pin:
+schematic-32pin: pcb/node_modules
 	@echo "Exporting 32-pin schematic SVG..."
 	@mkdir -p $(BUILD_DIR)
 	@cd pcb && npx tsci export -f schematic-svg 32pin.circuit.tsx -o ../$(BUILD_DIR)/schematic-32pin.svg
@@ -133,114 +100,43 @@ previews-32pin: pcb/build/index-32pin.kicad_pcb
 
 previews: previews-32pin
 
-# The 'pro' target specifically builds the MADS-only showcase
-pro:
-	@$(MAKE) a78 ASSEMBLER=mads FIXED_BASE="$(PRO_BASE)"
+# --- Assembly & ROM Rules (ca65 / ld65) ---
 
-# --- Tool Build Rules (Optimized to skip if already built) ---
+rom: $(BUILD_DIR) $(BANKED_ROMS)
 
-tools: $(YM2BIN) $(VGM2BIN) $(WAVTOOL) $(A78GEN)
-
-$(YM2BIN): tools/YmToYmb/*.cs tools/Core/*.cs
-	@echo "  Building YmToYmb..."
-	@mkdir -p $(BIN_DIR)
-	@dotnet publish tools/YmToYmb/YmToYmb.csproj -o $(BIN_DIR) --configuration Release --verbosity quiet
-
-$(VGM2BIN): tools/VgmToYmb/*.cs tools/Core/*.cs
-	@echo "  Building VgmToYmb..."
-	@mkdir -p $(BIN_DIR)
-	@dotnet publish tools/VgmToYmb/VgmToYmb.csproj -o $(BIN_DIR) --configuration Release --verbosity quiet
-
-$(WAVTOOL): tools/YmbToWav/*.cs tools/Core/*.cs
-	@echo "  Building YmbToWav..."
-	@mkdir -p $(BIN_DIR)
-	@dotnet publish tools/YmbToWav/YmbToWav.csproj -o $(BIN_DIR) --configuration Release --verbosity quiet
-
-$(A78GEN): tools/A78Gen/*.cs tools/Core/*.cs
-	@echo "  Building A78Gen..."
-	@mkdir -p $(BIN_DIR)
-	@dotnet publish tools/A78Gen/A78Gen.csproj -o $(BIN_DIR) --configuration Release --verbosity quiet
-
-rom: $(BUILD_DIR) $(MUSIC_ROMS) $(FIXED_ROMS) $(BANKED_ROMS)
-
-a78: $(BUILD_DIR) $(MUSIC_A78S) $(FIXED_A78S) $(BANKED_A78S)
+a78: $(BUILD_DIR) $(BANKED_A78S)
 
 bank: $(BUILD_DIR) $(BANKED_A78S) $(BANKED_ROMS)
-
-bin: $(BUILD_DIR) $(ALL_MUSIC_DATA)
-
-wav: $(BUILD_DIR) $(MUSIC_WAVS)
-
-help:
-	@echo "Atari 7800 YM2149 SDK"
-	@echo "Assembler: $(ASSEMBLER) (Use 'make ASSEMBLER=mads' to switch)"
-	@echo ""
-	@echo "Targets:"
-	@echo "  make tools     - Build the .NET music conversion tools"
-	@echo "  make pcb-28pin - Build 28-pin board PCB"
-	@echo "  make pcb-32pin - Build 32-pin board PCB (single YM, MVP target)"
-	@echo "  make pcb       - Alias for 'make pcb-32pin'"
-	@echo "  make previews  - Export front/back SVG previews of the current PCB design"
-	@echo "  make logic     - Build the PLD logic files (.jed)"
-	@echo "  make a78       - Build library of preview ROMs (emulator format)"
-	@echo "  make bank 		- Build the 32-pin bank-select chromatic scale demo (.a78 + .rom)"
-	@echo "  make pro       - Build the MADS 'Pro' showcase demo"
-	@echo "  make rom       - Build and sign raw ROMs for hardware (.rom)"
-	@echo "  make wav       - Generate verification .wav files for all tracks"
-	@echo "  make clean     - Wipe all build artifacts"
 
 $(BUILD_DIR):
 	@mkdir -p $(BUILD_DIR)
 
-# --- Conversion Rules ---
+$(BUILD_DIR)/%.o: $(SRC_DIR)/%.s | $(BUILD_DIR)
+	@echo "  Assembling [ca65]: $<"
+	@$(CA65) $(CA65_FLAGS) $< -o $@
 
-$(BUILD_DIR)/%.ymb $(BUILD_DIR)/%.ymi: $(YM_DIR)/%.ym $(YM2BIN) | $(BUILD_DIR)
-	@$(YM2BIN) $< -o $@ $(PREVIEW_FLAGS)
+$(BUILD_DIR)/bank.bin: $(BUILD_DIR)/bank.o | $(BUILD_DIR)
+	@echo "  Linking [ld65]: $@"
+	@$(LD65) $(LD65_FLAGS) -C a7800_banked.cfg $< -o $@
 
-$(BUILD_DIR)/%.ymb $(BUILD_DIR)/%.ymi: $(YM_DIR)/%.YM $(YM2BIN) | $(BUILD_DIR)
-	@$(YM2BIN) $< -o $@ $(PREVIEW_FLAGS)
-
-$(BUILD_DIR)/%.ymb $(BUILD_DIR)/%.ymi: $(VGM_DIR)/%.vgm $(VGM2BIN) | $(BUILD_DIR)
-	@$(VGM2BIN) $< -o $@ $(PREVIEW_FLAGS)
-
-$(BUILD_DIR)/%.ymb $(BUILD_DIR)/%.ymi: $(VGM_DIR)/%.vgz $(VGM2BIN) | $(BUILD_DIR)
-	@$(VGM2BIN) $< -o $@ $(PREVIEW_FLAGS)
-
-# --- Assembly Rules ---
-
-$(BUILD_DIR)/%.a78: $(BUILD_DIR)/%.rom header.json $(A78GEN)
-	@echo "  Packaging ROM [$(ASSEMBLER)]: $@"
-	@$(A78GEN) $< header.json -o $@
-
-$(BUILD_DIR)/bank.a78: $(BUILD_DIR)/bank.rom $(SRC_DIR)/bank.json $(A78GEN)
-	@echo "  Packaging banked ROM [$(ASSEMBLER)]: $@"
-	@$(A78GEN) $< $(SRC_DIR)/bank.json -o $@
-
-# Music Player (Uses universal source)
-$(BUILD_DIR)/%.bin: $(SRC_DIR)/player.asm $(BUILD_DIR)/%.ymb $(BUILD_DIR)/%.ymi | $(BUILD_DIR)
-	@echo "  Assembling Player ROM [$(ASSEMBLER)]: $*"
-	@mkdir -p $(BUILD_DIR)/$*_inc
-ifeq ($(ASSEMBLER),mads)
-	@echo ' icl "$*.ymi"' > $(BUILD_DIR)/$*_inc/music_bin.inc
-	@echo 'music_data: ins "$*.ymb"' >> $(BUILD_DIR)/$*_inc/music_bin.inc
-	@$(ASM_CMD) $< $(ASM_FLAGS) -i:$(BUILD_DIR)/$*_inc $(ASM_OUT)$@
-else
-	@echo ' include "$*.ymi"' > $(BUILD_DIR)/$*_inc/music_bin.inc
-	@echo 'music_data: incbin "$*.ymb"' >> $(BUILD_DIR)/$*_inc/music_bin.inc
-	@$(ASM_CMD) $< $(ASM_FLAGS) -I$(BUILD_DIR)/$*_inc $(ASM_OUT)$@
-endif
-	@rm -rf $(BUILD_DIR)/$*_inc
-
-# Generic Demo rule
-$(BUILD_DIR)/%.bin: $(SRC_DIR)/%.asm | $(BUILD_DIR)
-	@echo "  Assembling Demo ROM [$(ASSEMBLER)]: $*"
-	@$(ASM_CMD) $< $(ASM_FLAGS) $(ASM_OUT)$@
+$(BUILD_DIR)/%.bin: $(BUILD_DIR)/%.o | $(BUILD_DIR)
+	@echo "  Linking [ld65]: $@"
+	@$(LD65) $(LD65_FLAGS) -C a7800.cfg $< -o $@
 
 $(BUILD_DIR)/%.rom: $(BUILD_DIR)/%.bin
 	@cp $< $@
-	@$(SIGN) -w "$@" >/dev/null && $(SIGN) -t "$@" || true
+	@$(SIGN) -w "$@" >/dev/null 2>&1 || true
+	@$(SIGN) -t "$@" >/dev/null 2>&1 || true
 
-# --- Utilities ---
+$(BUILD_DIR)/bank.a78: $(BUILD_DIR)/bank.rom $(SRC_DIR)/bank.json
+	@echo "  Packaging banked ROM [a78tool]: $@"
+	@$(A78TOOL) generate -i $< -o $@ -c $(SRC_DIR)/bank.json
+
+$(BUILD_DIR)/%.a78: $(BUILD_DIR)/%.rom header.json
+	@echo "  Packaging ROM [a78tool]: $@"
+	@$(A78TOOL) generate -i $< -o $@ -c header.json
+
+# --- Logic Rules ---
 logic: $(BUILD_DIR)
 	@echo "Building 28-pin and 32-pin board PLD JED files from .pld sources..."
 	@galette pld/rom_28pin.pld && galette pld/rom_ym_28pin.pld
@@ -249,6 +145,20 @@ logic: $(BUILD_DIR)
 
 clean:
 	@rm -rf $(BUILD_DIR)
-	@rm -rf $(BIN_DIR)
-	@rm -f $(BUILD_DIR)/*.wav $(YM_DIR)/*.wav $(VGM_DIR)/*.wav
 	@rm -rf pcb/build/
+
+distclean: clean
+	@rm -rf pcb/node_modules
+
+help:
+	@echo "Atari 7800 YM2149 Cartridge Build System (ca65 / ld65)"
+	@echo ""
+	@echo "Targets:"
+	@echo "  make bank      - Build 32-pin bank-select chromatic scale demo (.a78 + .rom)"
+	@echo "  make pcb-28pin - Build 28-pin board PCB (tscircuit -> Freerouting -> Gerbers)"
+	@echo "  make pcb-32pin - Build 32-pin board PCB (tscircuit -> Freerouting -> Gerbers)"
+	@echo "  make pcb       - Alias for 'make pcb-32pin'"
+	@echo "  make previews  - Export front/back SVG previews of current PCB design"
+	@echo "  make logic     - Build PLD logic files (.jed via galette)"
+	@echo "  make clean     - Wipe build artifacts"
+	@echo "  make distclean - Wipe build artifacts AND pcb/node_modules"

@@ -1,12 +1,12 @@
 # Start from KiCad 9.0 base image, which has KiCad CLI, Python 3, and related KiCad requirements
-FROM ghcr.io/kicad/kicad:9.0
+FROM --platform=linux/amd64 ghcr.io/kicad/kicad:9.0
 
 USER root
 
 # Avoid prompts from apt
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install core tools, Node.js, Java, Cargo/Rust, DASM, and build dependencies
+# Install core tools, Node.js, Java, Cargo/Rust, cc65 (OBS), and build dependencies
 RUN apt-get update -y && \
     apt-get install -y --no-install-recommends \
         curl \
@@ -15,7 +15,6 @@ RUN apt-get update -y && \
         git \
         librsvg2-bin \
         build-essential \
-        dasm \
         ca-certificates \
         gnupg \
         unzip && \
@@ -34,13 +33,19 @@ RUN apt-get update -y && \
     # Install Cargo and Galette (for PLD compilation)
     apt-get install -y --no-install-recommends cargo && \
     cargo install galette --version 0.3.0 --root /usr/local --locked && \
+    # Install cc65 toolchain (ca65, ld65) from OBS pre-built package
+    echo 'deb http://download.opensuse.org/repositories/home:/strik/Debian_12/ /' | tee /etc/apt/sources.list.d/home:strik.list && \
+    curl -fsSL https://download.opensuse.org/repositories/home:strik/Debian_12/Release.key | gpg --dearmor | tee /etc/apt/trusted.gpg.d/home_strik.gpg > /dev/null && \
+    apt-get update -y && \
+    apt-get install -y --no-install-recommends cc65 && \
     # Compile 7800sign utility
     curl -fsSL https://raw.githubusercontent.com/7800-devtools/7800basic/master/7800sign.c -o /tmp/7800sign.c && \
     gcc -O2 /tmp/7800sign.c -o /usr/local/bin/7800sign && \
     rm /tmp/7800sign.c && \
-    # Install .NET 10.0 SDK
-    curl -sSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin --channel 10.0 --install-dir /usr/share/dotnet && \
-    ln -s /usr/share/dotnet/dotnet /usr/local/bin/dotnet && \
+    # Install a78tool (Atari 7800 ROM header utility)
+    wget -q "https://github.com/jbsohn/lokey-7800-tools/releases/download/0.0.1/a78tool_amd64.deb" -O /tmp/a78tool_amd64.deb && \
+    apt-get install -y /tmp/a78tool_amd64.deb && \
+    rm /tmp/a78tool_amd64.deb && \
     # Clean up apt
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
