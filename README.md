@@ -2,6 +2,8 @@
 
 > **Status:** Physical v0.2 PCBs (28-pin and 32-pin) have arrived from the manufacturer — preparing for hand-assembly, soldering, and hardware validation.
 
+![Physical v0.2 PCBs](docs/pcb-0.2.jpg)
+
 ## Project Overview
 
 The Atari 7800 community's favorite audio upgrades have a supply problem: POKEY clones run \$10 USD - \$40 USD each — when they're in stock — and the YM2151 has been out of production for decades, commanding collector prices used. The **Lokey 7800 YM** takes a different route: the **YM2149 PSG** — the Atari ST's sound chip — is still manufactured today as the **KC89C72** clone for about $2 USD. One in-production chip brings three-channel sound to the 7800, and with it a direct bridge to four decades of Atari ST music and a tracker ecosystem that is still alive and composing. Original YM2149 chips are also plentiful as used or New-Old-Stock (NOS) parts.
