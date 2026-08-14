@@ -103,6 +103,18 @@ This project is organized across 3 dedicated repositories:
 
 ---
 
+## Acknowledgements & Credits
+
+- **Karri Kaksonen (karrika)**: For the excellent [Otaku-flash](https://github.com/karrika/Otaku-flash) project. We have integrated the **Stable Alpha** Atari 7800 cartridge footprints, symbols, and professional design rules from this MIT-licensed repository.
+- **Simon Frankau ([galette](https://github.com/simon-frankau/galette))**: For the open-source **galette** logic assembler. It provides a modern, cross-platform toolchain for compiling ATF16V8B/ATF22V10 logic, saving us from legacy Windows tools.
+- **Dan Boris (AtariHQ)**: For the indispensable [7800 Cartridge Technical Specifications](https://atarihq.com/danb/7800cart/a7800cart.shtml) and reference diagrams that made this hardware mapping possible.
+- **Eagle & Ecernosoft**: For the insightful ideas and technical tips provided on the AtariAge forums, including the Pokey800 mapping recommendation and the inspiration for the "Active Shunt" audio stage design.
+- **Arnaud Carré (Leonard/OXG)**: For the pioneering [StSound](https://github.com/arnaud-carre/StSound) project and research into the Atari ST sound architecture.
+- **The Atari Community**: We are grateful to the dedicated homebrew developers and fans keeping both 8-bit and 16-bit Atari platforms vibrant.
+
+---
+
 ## License
 
 Licensed under the **MIT License**. See [LICENSE](LICENSE) for details.
+
